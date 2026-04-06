@@ -9,36 +9,55 @@ jobs:
     timeout-minutes: 90
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Cache Buildozer
-        uses: actions/cache@v3
+      - name: Cache pip and buildozer
+        uses: actions/cache@v4
         with:
           path: |
+            ~/.cache/pip
             ~/.buildozer
-            ~/.gradle
-          key: buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
           restore-keys: |
-            buildozer-${{ runner.os }}-
+            ${{ runner.os }}-buildozer-
 
-      - name: Build APK with Docker
-        uses: ArtemSBulgakov/buildozer-action@v1
-        id: buildozer
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            python3-pip python3-setuptools python3-wheel \
+            build-essential git zip unzip openjdk-17-jdk \
+            autoconf automake libtool libltdl-dev pkg-config \
+            zlib1g-dev libncurses5-dev libssl-dev libffi-dev \
+            libsqlite3-dev ccache
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
         with:
-          command: android debug
-          workdir: .
-          buildozer_version: stable
+          python-version: '3.10'
+
+      - name: Install buildozer and cython
+        run: |
+          pip install --upgrade pip
+          pip install cython==0.29.37
+          pip install buildozer==1.5.0
+
+      - name: Build APK
+        env:
+          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+        run: |
+          yes | buildozer android debug 2>&1 | tee build.log
 
       - name: Upload APK
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: clonemaster--debug
-          path: ${{ steps.buildozer.outputs.filename }}
+          path: bin/*.apk
           if-no-files-found: error
 
       - name: Upload build log on failure
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-log
-          path: .buildozer/android/platform/build-arm64-v8a/dists/*/build.log
+          path: build.log
