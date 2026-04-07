@@ -8,21 +8,18 @@ source.include_exts = py,png,jpg,kv,atlas,json
 
 version = 1.0
 
-requirements = python3,kivy==2.2.1,kivymd,pillow
+# Kivy 2.1.0 أكثر استقراراً مع buildozer 1.5
+requirements = python3,kivy==2.1.0
 
 orientation = portrait
 fullscreen = 0
 
 android.permissions = INTERNET
-android.api = 33
+android.api = 31
 android.minapi = 21
-android.ndk = 25b
-android.sdk = 33
+android.ndk = 23b
 android.accept_sdk_license = True
 android.archs = arm64-v8a
-
-# تفعيل قبول الترخيص تلقائياً
-p4a.branch = master
 
 [buildozer]
 log_level = 2
